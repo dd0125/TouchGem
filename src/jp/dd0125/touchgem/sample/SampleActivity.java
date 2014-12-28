@@ -32,7 +32,7 @@ public class SampleActivity extends Activity {
         float scaleWidth = 300f;
         config.setupScale(scaleWidth, scaleHeight, disp.getWidth(), disp.getHeight());
 
-        touchGem = new TouchGem(config, new TouchGemListener() {
+        TouchGemListener listener = new TouchGemListener() {
 
             @Override
             public void onTap(FingerData fingerData) {
@@ -70,7 +70,8 @@ public class SampleActivity extends Activity {
             public void onSwipped(FingerData fingerData) {
                 Log.d("TouchGem",
                         "MainActivity TouchGem Event onSwipped : " + fingerData.getDegree()
-                                + ", way8Type = " + fingerData.getWat8Type());
+                                + ", way8Type = " + fingerData.getWat8Type() + ", way4Type = "
+                                + fingerData.getWat4Type());
 
             }
 
@@ -85,7 +86,71 @@ public class SampleActivity extends Activity {
                 Log.d("TouchGem", "MainActivity TouchGem Event onLongTap");
 
             }
-        });
+        };
+        config.setListener(listener);
+
+        // 部分的なListener設定
+        TouchGemListener partialListener = new TouchGemListener() {
+
+            @Override
+            public void onTap(FingerData fingerData) {
+                Log.d("TouchGem", "MainActivity TouchGem partialListener Event onTap : "
+                        + fingerData.toString());
+
+            }
+
+            @Override
+            public void onFirstTouch(FingerData fingerData) {
+                Log.d("TouchGem", "MainActivity TouchGem partialListener Event onFirstTouch");
+
+            }
+
+            @Override
+            public void onDragging(FingerData fingerData) {
+                Log.d("TouchGem",
+                        "MainActivity TouchGem partialListener Event onDragging : "
+                                + fingerData.toString());
+
+            }
+
+            @Override
+            public void onDragged(FingerData fingerData) {
+                Log.d("TouchGem",
+                        "MainActivity TouchGem partialListener Event onDragged : "
+                                + fingerData.toString());
+
+            }
+
+            @Override
+            public void onDoubleTap(FingerData fingerData) {
+                Log.d("TouchGem", "MainActivity TouchGem partialListener Event onDoubleTap");
+
+            }
+
+            @Override
+            public void onSwipped(FingerData fingerData) {
+                Log.d("TouchGem",
+                        "MainActivity TouchGem partialListener Event onSwipped : "
+                                + fingerData.getDegree()
+                                + ", way8Type = " + fingerData.getWat8Type() + ", way4Type = "
+                                + fingerData.getWat4Type());
+
+            }
+
+            @Override
+            public void onMoving(FingerData fingerData) {
+                Log.d("TouchGem", "MainActivity TouchGem partialListener Event onMoving");
+
+            }
+
+            @Override
+            public void onLongTap(FingerData fingerData) {
+                Log.d("TouchGem", "MainActivity TouchGem partialListener Event onLongTap");
+
+            }
+        };
+        config.setListenerPartial(0, 200f, 0, 200f, partialListener);
+        touchGem = new TouchGem(config);
 
         View view = findViewById(android.R.id.content);
         view.setOnTouchListener(new OnTouchListener() {

@@ -1,21 +1,18 @@
 
 package jp.dd0125.touchgem;
 
-import jp.dd0125.touchgem.listener.TouchGemListener;
 import android.os.Handler;
 import android.util.Log;
 
 public class TouchGem {
     private final TouchGemConfig config;
-    private final TouchGemListener listener;
 
     private Runnable onTapRunnable;
     private Runnable onDraggingRunnable;
     private Runnable onLongTapRunnable;
 
-    public TouchGem(TouchGemConfig config, TouchGemListener listener) {
+    public TouchGem(TouchGemConfig config) {
         this.config = config;
-        this.listener = listener;
 
         Log.d("TouchGem", "TouchGem : screen = " + config.screenHeight + ", " + config.screenWidth);
     }
@@ -36,13 +33,23 @@ public class TouchGem {
         // Log.d("TouchGem", "update : " + status.toString() + ", x,y = " + x +
         // ", " + y);
         FingerData fingerData = fingerMap.get(fingerId);
-        if (fingerData == null) {
-            fingerData = new FingerData(fingerId);
-            fingerData.init(x, y, config);
+        switch (touchAction) {
+            case DOWN:
+            case MOVE:
 
-            fingerMap.put(fingerId, fingerData);
-        } else {
-            fingerData.update(x, y);
+                if (fingerData == null) {
+                    fingerData = new FingerData(fingerId);
+                    fingerData.init(x, y, config);
+
+                    fingerMap.put(fingerId, fingerData);
+                } else {
+                    fingerData.update(x, y);
+                }
+            case UP:
+                break;
+            default:
+                break;
+
         }
 
         int fingerMapSize = fingerMap.size();
@@ -133,7 +140,7 @@ public class TouchGem {
 
                     @Override
                     public void run() {
-                        listener.onLongTap(fingerData);
+                        fingerData.getListener().onLongTap(fingerData);
                         updateStatus(SingleStatus.None);
                     }
                 };
@@ -175,7 +182,7 @@ public class TouchGem {
 
                     @Override
                     public void run() {
-                        listener.onTap(fingerData);
+                        fingerData.getListener().onTap(fingerData);
                         updateStatus(SingleStatus.None);
 
                     }
@@ -224,7 +231,7 @@ public class TouchGem {
 
             case UP:
                 // onDoubleTap
-                listener.onDoubleTap(fingerData);
+                fingerData.getListener().onDoubleTap(fingerData);
                 updateStatus(SingleStatus.None);
                 break;
             case DOWN:
@@ -238,7 +245,7 @@ public class TouchGem {
             float y) {
         switch (touchAction) {
             case MOVE:
-                listener.onMoving(fingerData);
+                fingerData.getListener().onMoving(fingerData);
                 // ある程度時間が経過した場合、 Dragging に移行する
                 long currentTimeMillis = System.currentTimeMillis();
                 if (fingerData.getFirstTouchTime() + config.moveToSwipeCheckTime < currentTimeMillis) {
@@ -261,7 +268,7 @@ public class TouchGem {
                     @Override
                     public void run() {
                         updateStatus(SingleStatus.Dragging);
-                        listener.onDragging(fingerData);
+                        fingerData.getListener().onDragging(fingerData);
 
                     }
                 };
@@ -270,7 +277,7 @@ public class TouchGem {
                 break;
             case UP:
                 // OnDragged
-                listener.onDragged(fingerData);
+                fingerData.getListener().onDragged(fingerData);
                 updateStatus(SingleStatus.None);
                 break;
             case DOWN:
@@ -283,12 +290,12 @@ public class TouchGem {
     private void updateForDragging(FingerData fingerData, TouchAction touchAction, float x, float y) {
         switch (touchAction) {
             case MOVE:
-                listener.onMoving(fingerData);
-                listener.onDragging(fingerData);
+                fingerData.getListener().onMoving(fingerData);
+                fingerData.getListener().onDragging(fingerData);
                 break;
             case UP:
                 // OnDragged
-                listener.onDragged(fingerData);
+                fingerData.getListener().onDragged(fingerData);
                 updateStatus(SingleStatus.None);
                 break;
             case DOWN:
@@ -301,13 +308,13 @@ public class TouchGem {
     private void updateForSwipping(FingerData fingerData, TouchAction touchAction, float x, float y) {
         switch (touchAction) {
             case MOVE:
-                listener.onMoving(fingerData);
+                fingerData.getListener().onMoving(fingerData);
                 break;
             case UP:
                 handler.removeCallbacks(onDraggingRunnable);
 
                 // OnSwipped
-                listener.onSwipped(fingerData);
+                fingerData.getListener().onSwipped(fingerData);
                 updateStatus(SingleStatus.None);
                 break;
             case DOWN:

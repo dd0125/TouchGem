@@ -1,10 +1,12 @@
 
 package jp.dd0125.touchgem;
 
+import jp.dd0125.touchgem.listener.TouchGemListener;
 import android.util.Log;
 
 public class FingerData {
     private final int fingerId;
+    private TouchGemListener listener;
 
     private float x;
     private float y;
@@ -36,6 +38,14 @@ public class FingerData {
         this.config = config;
 
         firstTouchTime = System.currentTimeMillis();
+
+        // 部分的な Listener が存在する場合、設定する
+        TouchGemListenerPartial touchGemListenerPartial = config.getTouchGemListenerPartial(firstX,
+                firstY);
+        if (touchGemListenerPartial != null) {
+            Log.d("TouchGem", "FingerData init listener = touchGemListenerPartial.listener");
+            listener = touchGemListenerPartial.listener;
+        }
         Log.d("TouchGem", "FingerData init");
     }
 
@@ -87,6 +97,15 @@ public class FingerData {
         return radian;
     }
 
+    /**
+     * Degree<br />
+     * ・UP(-180 or 180)<br />
+     * ・DOWN(0)<br />
+     * ・LEFT(-90)<br />
+     * ・RIGHT(90)<br />
+     * 
+     * @return
+     */
     private double calcDegree(double x, double y, double x2, double y2) {
         double radian = calcRadian(x, y, x2, y2);
         double degree = radian * 180d / Math.PI;
@@ -195,6 +214,13 @@ public class FingerData {
 
     public long getFirstTouchTime() {
         return firstTouchTime;
+    }
+
+    public TouchGemListener getListener() {
+        if (listener == null) {
+            listener = config.standardListener;
+        }
+        return listener;
     }
 
     @Override
