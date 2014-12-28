@@ -16,6 +16,8 @@ public class TouchGem {
     public TouchGem(TouchGemConfig config, TouchGemListener listener) {
         this.config = config;
         this.listener = listener;
+
+        Log.d("TouchGem", "TouchGem : screen = " + config.screenHeight + ", " + config.screenWidth);
     }
 
     public enum TouchAction {
@@ -31,11 +33,12 @@ public class TouchGem {
     private final FingerDataMap fingerMap = new FingerDataMap();
 
     public void update(int fingerId, TouchAction touchAction, float x, float y) {
-        Log.d("TouchGem", "update : " + status.toString() + ", x,y = " + x + ", " + y);
+        // Log.d("TouchGem", "update : " + status.toString() + ", x,y = " + x +
+        // ", " + y);
         FingerData fingerData = fingerMap.get(fingerId);
         if (fingerData == null) {
             fingerData = new FingerData(fingerId);
-            fingerData.init(x, y, config.postponement);
+            fingerData.init(x, y, config);
 
             fingerMap.put(fingerId, fingerData);
         } else {

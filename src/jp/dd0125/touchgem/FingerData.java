@@ -13,7 +13,7 @@ public class FingerData {
     private float firstX;
     private float firstY;
     private long firstTouchTime;
-    private float postponement;
+    private TouchGemConfig config;
 
     private double degree;
     private double distance;
@@ -30,10 +30,10 @@ public class FingerData {
         this.fingerId = fingerId;
     }
 
-    public void init(float firstX, float firstY, float postponement) {
+    public void init(float firstX, float firstY, TouchGemConfig config) {
         this.firstX = firstX;
         this.firstY = firstY;
-        this.postponement = postponement;
+        this.config = config;
 
         firstTouchTime = System.currentTimeMillis();
         Log.d("TouchGem", "FingerData init");
@@ -50,7 +50,7 @@ public class FingerData {
         }
         float difference = differenceX + differenceY;
         Log.d("TouchGem", "FingerData isMoving difference = " + difference);
-        if (difference > postponement) {
+        if (difference > config.postponement) {
             return true;
         }
         return false;
@@ -162,22 +162,48 @@ public class FingerData {
     }
 
     public float getX() {
-        return x;
+        if (config.isScalable) {
+            return x * config.scaleWidthCoefficient;
+        } else {
+            return x;
+        }
     }
 
     public float getY() {
-        return y;
+        if (config.isScalable) {
+            return y * config.scaleHeightCoefficient;
+        } else {
+            return y;
+        }
     }
 
     public float getFirstX() {
-        return firstX;
+        if (config.isScalable) {
+            return firstX * config.scaleWidthCoefficient;
+        } else {
+            return firstX;
+        }
     }
 
     public float getFirstY() {
-        return firstY;
+        if (config.isScalable) {
+            return firstY * config.scaleHeightCoefficient;
+        } else {
+            return firstY;
+        }
     }
 
     public long getFirstTouchTime() {
         return firstTouchTime;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("finger");
+        sb.append(";x,y = ").append(getX()).append(", ").append(getY());
+        sb.append(";firstX,Y = ").append(getFirstX()).append(", ").append(getFirstY());
+        sb.append(";speed = ").append(getSpeed());
+        return sb.toString();
     }
 }

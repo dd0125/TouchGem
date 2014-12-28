@@ -10,6 +10,7 @@ import jp.dd0125.touchgem.listener.TouchGemListener;
 import android.app.Activity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Display;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
@@ -24,11 +25,18 @@ public class SampleActivity extends Activity {
 
         TouchGemConfig config = new TouchGemConfig();
         config.swipeSpeed = 0.1f;
+
+        // Displayのインスタンス取得
+        Display disp = getWindowManager().getDefaultDisplay();
+        float scaleHeight = 400f;
+        float scaleWidth = 300f;
+        config.setupScale(scaleWidth, scaleHeight, disp.getWidth(), disp.getHeight());
+
         touchGem = new TouchGem(config, new TouchGemListener() {
 
             @Override
             public void onTap(FingerData fingerData) {
-                Log.d("TouchGem", "MainActivity TouchGem Event onTap");
+                Log.d("TouchGem", "MainActivity TouchGem Event onTap : " + fingerData.toString());
 
             }
 
@@ -40,13 +48,15 @@ public class SampleActivity extends Activity {
 
             @Override
             public void onDragging(FingerData fingerData) {
-                Log.d("TouchGem", "MainActivity TouchGem Event onDragging");
+                Log.d("TouchGem",
+                        "MainActivity TouchGem Event onDragging : " + fingerData.toString());
 
             }
 
             @Override
             public void onDragged(FingerData fingerData) {
-                Log.d("TouchGem", "MainActivity TouchGem Event onDragged");
+                Log.d("TouchGem",
+                        "MainActivity TouchGem Event onDragged : " + fingerData.toString());
 
             }
 
