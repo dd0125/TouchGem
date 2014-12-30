@@ -13,7 +13,7 @@ public class TouchGem {
 
     public TouchGem(TouchGemConfig config) {
         this.config = config;
-
+        fingerMap = new FingerDataMap(config);
         Log.d("TouchGem", "TouchGem : screen = " + config.screenHeight + ", " + config.screenWidth);
     }
 
@@ -21,30 +21,40 @@ public class TouchGem {
         DOWN, UP, MOVE
     }
 
-    public enum SingleStatus {
-        None, FirstTouch, FirstMove, Dragging, Swipping, FirstTouchUp, FirstDoubleTouch
+    public enum TouchCountStatus {
+        None, Single, Double
     }
 
-    private SingleStatus status = SingleStatus.None;
-    private final Handler handler = new Handler();
-    private final FingerDataMap fingerMap = new FingerDataMap();
+    private TouchCountStatus touchCountStatus = TouchCountStatus.None;
 
-    public void update(int fingerId, TouchAction touchAction, float x, float y) {
-        // Log.d("TouchGem", "update : " + status.toString() + ", x,y = " + x +
-        // ", " + y);
-        FingerData fingerData = fingerMap.get(fingerId);
+    public enum Status {
+        None, SingleTouch, SingleMove, Dragging, Swipping, SingleTouchUp, SingleDoubleTouch
+        , DoubleTouch
+    }
+
+    private Status status = Status.None;
+    private final Handler handler = new Handler();
+    private final FingerDataMap fingerMap;
+
+    public void update(int actionIndex, TouchAction touchAction, float x, float y) {
+        // Log.d("TouchGem", "update : fingerId = " + fingerId + ", " +
+        // status.toString() + ", x,y = "
+        // + x + ", " + y + ", touchAction = " + touchAction);
+
+        // Action により、FinderData を update する
+        FingerData fingerData = fingerMap.get(actionIndex);
         switch (touchAction) {
             case DOWN:
             case MOVE:
-
                 if (fingerData == null) {
-                    fingerData = new FingerData(fingerId);
+                    fingerData = new FingerData();
                     fingerData.init(x, y, config);
 
-                    fingerMap.put(fingerId, fingerData);
+                    fingerMap.put(actionIndex, fingerData);
                 } else {
                     fingerData.update(x, y);
                 }
+                break;
             case UP:
                 break;
             default:
@@ -52,57 +62,78 @@ public class TouchGem {
 
         }
 
-        int fingerMapSize = fingerMap.size();
-        if (fingerMapSize == 1) {
-            switch (status) {
-                case None:
-                    updateForNone(fingerData, touchAction, x, y);
+        // 指の数が変化した場合、ステータスを上書きする
+        if (config.doubleTouchGemListener != null) {
+            int fingerMapSize = fingerMap.size();
+            // Log.d("TouchGem", "fingerMapSize = " + fingerMapSize);
+            if (fingerMapSize == 1) {
+                if (touchCountStatus != TouchCountStatus.Single) {
+                    touchCountStatus = TouchCountStatus.Single;
+                    updateStatus(Status.SingleTouch);
+                }
+            } else if (fingerMapSize == 2) {
+                if (touchCountStatus != TouchCountStatus.Double) {
 
-                    break;
-                case FirstTouch:
-                    updateForFirstTouch(fingerData, touchAction, x, y);
-                    break;
-                case FirstMove:
-                    updateForFirstMove(fingerData, touchAction, x, y);
-                    break;
-                case Dragging:
-                    updateForDragging(fingerData, touchAction, x, y);
-                    break;
-                case FirstDoubleTouch:
-                    updateForFirstDoubleTouch(fingerData, touchAction, x, y);
-                    break;
-                case FirstTouchUp:
-                    updateForFirstTouchUp(fingerData, touchAction, x, y);
-                    break;
-                case Swipping:
-                    updateForSwipping(fingerData, touchAction, x, y);
-                    break;
-                default:
-                    break;
-
+                    touchCountStatus = TouchCountStatus.Double;
+                    updateStatus(Status.DoubleTouch);
+                }
             }
+        }
+
+        switch (status) {
+            case None:
+                updateForNone(actionIndex, fingerData, touchAction, x, y);
+                break;
+            case SingleTouch:
+                updateForSingleTouch(actionIndex, fingerData, touchAction, x, y);
+                break;
+            case SingleMove:
+                updateForSingleMove(actionIndex, fingerData, touchAction, x, y);
+                break;
+            case Dragging:
+                updateForDragging(actionIndex, fingerData, touchAction, x, y);
+                break;
+            case SingleDoubleTouch:
+                updateForSingleDoubleTouch(actionIndex, fingerData, touchAction, x, y);
+                break;
+            case SingleTouchUp:
+                updateForSingleTouchUp(actionIndex, fingerData, touchAction, x, y);
+                break;
+            case Swipping:
+                updateForSwipping(actionIndex, fingerData, touchAction, x, y);
+                break;
+            case DoubleTouch:
+                updateForDoubleTouch(actionIndex, fingerData, touchAction, x, y);
+                break;
+            default:
+                break;
 
         }
+
     }
 
-    private void updateStatus(SingleStatus newStatus) {
+    /**
+     * ステータス変更
+     * 
+     * @param newStatus
+     */
+    private void updateStatus(Status newStatus) {
         if (status == newStatus) {
             return;
         }
+        Log.d("TouchGem", "TouchGem.updateStatus : " + status + " -> " + newStatus);
         switch (status) {
             case None:
-
                 break;
             case Dragging:
                 break;
-            case FirstDoubleTouch:
+            case SingleDoubleTouch:
                 break;
-            case FirstMove:
+            case SingleMove:
                 break;
-            case FirstTouch:
-
+            case SingleTouch:
                 break;
-            case FirstTouchUp:
+            case SingleTouchUp:
                 break;
             case Swipping:
                 break;
@@ -111,19 +142,25 @@ public class TouchGem {
         }
         switch (newStatus) {
             case None:
-                fingerMap.clear();
+                touchCountStatus = TouchCountStatus.None;
                 break;
             case Dragging:
                 break;
-            case FirstDoubleTouch:
+            case SingleDoubleTouch:
                 break;
-            case FirstMove:
+            case SingleMove:
                 break;
-            case FirstTouch:
+            case SingleTouch:
                 break;
-            case FirstTouchUp:
+            case SingleTouchUp:
                 break;
             case Swipping:
+                break;
+            case DoubleTouch:
+                handler.removeCallbacks(onTapRunnable);
+                handler.removeCallbacks(onLongTapRunnable);
+                handler.removeCallbacks(onDraggingRunnable);
+
                 break;
             default:
                 break;
@@ -131,7 +168,8 @@ public class TouchGem {
         this.status = newStatus;
     }
 
-    private void updateForNone(final FingerData fingerData, TouchAction touchAction, float x,
+    private void updateForNone(final int actionIndex, final FingerData fingerData,
+            TouchAction touchAction, float x,
             float y) {
         switch (touchAction) {
             case DOWN:
@@ -141,12 +179,14 @@ public class TouchGem {
                     @Override
                     public void run() {
                         fingerData.getListener().onLongTap(fingerData);
-                        updateStatus(SingleStatus.None);
+                        fingerMap.remove(actionIndex);
+                        updateStatus(Status.None);
                     }
                 };
-                handler.postDelayed(onLongTapRunnable, config.longTappingTime);
+                // handler.postDelayed(onLongTapRunnable,
+                // config.longTappingTime);
 
-                updateStatus(SingleStatus.FirstTouch);
+                updateStatus(Status.SingleTouch);
 
                 break;
             case MOVE:
@@ -158,7 +198,8 @@ public class TouchGem {
         }
     }
 
-    private void updateForFirstTouch(final FingerData fingerData, TouchAction touchAction,
+    private void updateForSingleTouch(final int actionIndex, final FingerData fingerData,
+            TouchAction touchAction,
             final float x,
             final float y) {
         switch (touchAction) {
@@ -169,12 +210,12 @@ public class TouchGem {
                     return;
                 }
                 handler.removeCallbacks(onLongTapRunnable);
-                updateStatus(SingleStatus.FirstMove);
+                updateStatus(Status.SingleMove);
 
                 break;
             case UP:
                 handler.removeCallbacks(onLongTapRunnable);
-                updateStatus(SingleStatus.FirstTouchUp);
+                updateStatus(Status.SingleTouchUp);
 
                 // onTap handler で登録
                 // onTap が行われた場合、 status を None に戻す
@@ -182,8 +223,12 @@ public class TouchGem {
 
                     @Override
                     public void run() {
+                        if (fingerData == null) {
+                            Log.d("TouchGem", "fingerData is null");
+                        }
                         fingerData.getListener().onTap(fingerData);
-                        updateStatus(SingleStatus.None);
+                        fingerMap.remove(actionIndex);
+                        updateStatus(Status.None);
 
                     }
                 };
@@ -198,14 +243,15 @@ public class TouchGem {
 
     }
 
-    private void updateForFirstTouchUp(FingerData fingerData, TouchAction touchAction, float x,
+    private void updateForSingleTouchUp(int actionIndex, FingerData fingerData,
+            TouchAction touchAction, float x,
             float y) {
         switch (touchAction) {
             case DOWN:
                 // OnTap の handler を除去
                 // Double Tap に備える
                 handler.removeCallbacks(onTapRunnable);
-                updateStatus(SingleStatus.FirstDoubleTouch);
+                updateStatus(Status.SingleDoubleTouch);
 
                 break;
             case MOVE:
@@ -217,7 +263,8 @@ public class TouchGem {
         }
     }
 
-    private void updateForFirstDoubleTouch(FingerData fingerData, TouchAction touchAction, float x,
+    private void updateForSingleDoubleTouch(int actionIndex, FingerData fingerData,
+            TouchAction touchAction, float x,
             float y) {
 
         switch (touchAction) {
@@ -227,12 +274,13 @@ public class TouchGem {
                     return;
                 }
 
-                updateStatus(SingleStatus.FirstMove);
+                updateStatus(Status.SingleMove);
 
             case UP:
                 // onDoubleTap
                 fingerData.getListener().onDoubleTap(fingerData);
-                updateStatus(SingleStatus.None);
+                fingerMap.remove(actionIndex);
+                updateStatus(Status.None);
                 break;
             case DOWN:
                 break;
@@ -241,7 +289,8 @@ public class TouchGem {
         }
     }
 
-    private void updateForFirstMove(final FingerData fingerData, TouchAction touchAction, float x,
+    private void updateForSingleMove(int actionIndex, final FingerData fingerData,
+            TouchAction touchAction, float x,
             float y) {
         switch (touchAction) {
             case MOVE:
@@ -249,16 +298,17 @@ public class TouchGem {
                 // ある程度時間が経過した場合、 Dragging に移行する
                 long currentTimeMillis = System.currentTimeMillis();
                 if (fingerData.getFirstTouchTime() + config.moveToSwipeCheckTime < currentTimeMillis) {
-                    updateStatus(SingleStatus.Dragging);
+                    updateStatus(Status.Dragging);
                     return;
                 }
 
                 float speed = fingerData.getSpeed();
-                Log.d("TouchGem", "TouchGem updateForFirstMove speed = " + speed);
+                // Log.d("TouchGem", "TouchGem updateForFirstMove speed = " +
+                // speed);
 
                 // Speed が swipeSpeed に達していない場合、Dragging に移行する
                 if (config.swipeSpeed > speed) {
-                    updateStatus(SingleStatus.Dragging);
+                    updateStatus(Status.Dragging);
                     return;
                 }
 
@@ -267,18 +317,19 @@ public class TouchGem {
 
                     @Override
                     public void run() {
-                        updateStatus(SingleStatus.Dragging);
+                        updateStatus(Status.Dragging);
                         fingerData.getListener().onDragging(fingerData);
 
                     }
                 };
                 handler.postDelayed(onDraggingRunnable, config.swippingLimitTime);
-                updateStatus(SingleStatus.Swipping);
+                updateStatus(Status.Swipping);
                 break;
             case UP:
                 // OnDragged
                 fingerData.getListener().onDragged(fingerData);
-                updateStatus(SingleStatus.None);
+                fingerMap.remove(actionIndex);
+                updateStatus(Status.None);
                 break;
             case DOWN:
                 break;
@@ -287,7 +338,8 @@ public class TouchGem {
         }
     }
 
-    private void updateForDragging(FingerData fingerData, TouchAction touchAction, float x, float y) {
+    private void updateForDragging(int actionIndex, FingerData fingerData, TouchAction touchAction,
+            float x, float y) {
         switch (touchAction) {
             case MOVE:
                 fingerData.getListener().onMoving(fingerData);
@@ -296,7 +348,8 @@ public class TouchGem {
             case UP:
                 // OnDragged
                 fingerData.getListener().onDragged(fingerData);
-                updateStatus(SingleStatus.None);
+                fingerMap.remove(actionIndex);
+                updateStatus(Status.None);
                 break;
             case DOWN:
                 break;
@@ -305,7 +358,8 @@ public class TouchGem {
         }
     }
 
-    private void updateForSwipping(FingerData fingerData, TouchAction touchAction, float x, float y) {
+    private void updateForSwipping(int actionIndex, FingerData fingerData, TouchAction touchAction,
+            float x, float y) {
         switch (touchAction) {
             case MOVE:
                 fingerData.getListener().onMoving(fingerData);
@@ -315,7 +369,8 @@ public class TouchGem {
 
                 // OnSwipped
                 fingerData.getListener().onSwipped(fingerData);
-                updateStatus(SingleStatus.None);
+                fingerMap.remove(actionIndex);
+                updateStatus(Status.None);
                 break;
             case DOWN:
                 break;
@@ -324,7 +379,48 @@ public class TouchGem {
         }
     }
 
-    public SingleStatus getStatus() {
+    private void updateForDoubleTouch(int actionIndex, FingerData updateFingerData,
+            TouchAction touchAction,
+            float x,
+            float y) {
+        switch (touchAction) {
+            case DOWN:
+
+                break;
+            case MOVE:
+                if (config.doubleTouchGemListener != null) {
+                    boolean isMoving = updateFingerData.isMoving(x, y);
+                    if (isMoving) {
+                        DoubleTouchInfo doubleTouchInfo = fingerMap.getDoubleTouchInfo();
+                        // 変化量を取得
+                        doubleTouchInfo.update();
+                        double fluctuationDegree = doubleTouchInfo.getFluctuationDegree();
+
+                        if (fluctuationDegree != 0d) {
+                            config.doubleTouchGemListener.onRotation(fluctuationDegree);
+                        }
+
+                        // PinchInOut と Rotaion を同時に動かさないために工夫してもいいかも
+                        double fluctuationDistance = doubleTouchInfo.getFluctuationDistance();
+                        if (fluctuationDistance != 0d) {
+                            config.doubleTouchGemListener.onPinchInOut(fluctuationDistance);
+                        }
+                    }
+
+                }
+                break;
+            case UP:
+                fingerMap.remove(actionIndex);
+                updateStatus(Status.SingleTouch);
+                break;
+            default:
+                break;
+
+        }
+
+    }
+
+    public Status getStatus() {
         return status;
     }
 

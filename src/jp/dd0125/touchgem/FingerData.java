@@ -2,10 +2,8 @@
 package jp.dd0125.touchgem;
 
 import jp.dd0125.touchgem.listener.TouchGemListener;
-import android.util.Log;
 
 public class FingerData {
-    private final int fingerId;
     private TouchGemListener listener;
 
     private float x;
@@ -28,25 +26,26 @@ public class FingerData {
         NONE, LEFT, UP, RIGHT, DOWN, LEFTUP, RIGHTUP, LEFTDOWN, RIGHTDOWN
     }
 
-    public FingerData(int fingerId) {
-        this.fingerId = fingerId;
-    }
-
     public void init(float firstX, float firstY, TouchGemConfig config) {
+        // Log.d("TouchGem", "FingerData init");
+
         this.firstX = firstX;
         this.firstY = firstY;
+        this.x = firstX;
+        this.y = firstY;
         this.config = config;
 
         firstTouchTime = System.currentTimeMillis();
 
         // 部分的な Listener が存在する場合、設定する
-        TouchGemListenerPartial touchGemListenerPartial = config.getTouchGemListenerPartial(firstX,
-                firstY);
+        TouchGemListenerPartial touchGemListenerPartial = config.getTouchGemListenerPartial(
+                getFirstX(),
+                getFirstY());
         if (touchGemListenerPartial != null) {
-            Log.d("TouchGem", "FingerData init listener = touchGemListenerPartial.listener");
+            // Log.d("TouchGem",
+            // "FingerData init listener = touchGemListenerPartial.listener");
             listener = touchGemListenerPartial.listener;
         }
-        Log.d("TouchGem", "FingerData init");
     }
 
     public boolean isMoving(float x, float y) {
@@ -59,7 +58,7 @@ public class FingerData {
             differenceY *= -1;
         }
         float difference = differenceX + differenceY;
-        Log.d("TouchGem", "FingerData isMoving difference = " + difference);
+        // Log.d("TouchGem", "FingerData isMoving difference = " + difference);
         if (difference > config.postponement) {
             return true;
         }
@@ -78,38 +77,13 @@ public class FingerData {
         // speed の計算
         speed = differenceX + differenceY;
         // from, current の角度を計算
-        degree = calcDegree(firstX, firstY, newX, newY);
+        degree = Common.calcDegree(firstX, firstY, newX, newY);
 
         // from, current の距離を計算
-        distance = calcDistance(firstX, firstY, newX, newY);
+        distance = Common.calcDistance(firstX, firstY, newX, newY);
 
         x = newX;
         y = newY;
-    }
-
-    private double calcDistance(double x, double y, double x2, double y2) {
-        double distance = Math.sqrt((x2 - x) * (x2 - x) + (y2 - y) * (y2 - y));
-        return distance;
-    }
-
-    private double calcRadian(double x, double y, double x2, double y2) {
-        double radian = Math.atan2(x2 - x, y2 - y);
-        return radian;
-    }
-
-    /**
-     * Degree<br />
-     * ・UP(-180 or 180)<br />
-     * ・DOWN(0)<br />
-     * ・LEFT(-90)<br />
-     * ・RIGHT(90)<br />
-     * 
-     * @return
-     */
-    private double calcDegree(double x, double y, double x2, double y2) {
-        double radian = calcRadian(x, y, x2, y2);
-        double degree = radian * 180d / Math.PI;
-        return degree;
     }
 
     public Way8Type getWat8Type() {

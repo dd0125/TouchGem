@@ -3,6 +3,7 @@ package jp.dd0125.touchgem;
 
 import java.util.ArrayList;
 
+import jp.dd0125.touchgem.listener.DoubleTouchGemListener;
 import jp.dd0125.touchgem.listener.TouchGemListener;
 
 public class TouchGemConfig {
@@ -14,8 +15,6 @@ public class TouchGemConfig {
     protected float scaleWidthCoefficient;
     protected float scaleHeightCoefficient;
 
-    public float postponement = 20f;
-
     public float swipeSpeed = 1f;
 
     public int moveToSwipeCheckTime = 250;
@@ -23,6 +22,10 @@ public class TouchGemConfig {
     public int swippingLimitTime = 500;
     public int doubleTapCheckTime = 250;
 
+    //
+    public float postponement = 20f;
+    public double postponementRotation = 1d;
+    public double postponementPinchInOut = 1d;
     // Listener
     protected TouchGemListener standardListener;
 
@@ -32,7 +35,13 @@ public class TouchGemConfig {
 
     private final ArrayList<TouchGemListenerPartial> listenerPartialList = new ArrayList<TouchGemListenerPartial>();
 
-    public void setListenerPartial(float top, float bottom, float left, float right,
+    protected DoubleTouchGemListener doubleTouchGemListener;
+
+    public void setDoubleTouchListener(DoubleTouchGemListener doubleTouchGemListener) {
+        this.doubleTouchGemListener = doubleTouchGemListener;
+    }
+
+    public void addListenerPartial(float top, float bottom, float left, float right,
             TouchGemListener listener) {
         TouchGemListenerPartial listenerPartial = new TouchGemListenerPartial(top, bottom, left,
                 right, listener);
