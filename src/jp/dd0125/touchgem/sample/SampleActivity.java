@@ -27,6 +27,13 @@ public class SampleActivity extends Activity {
 
         TouchGemConfig config = new TouchGemConfig();
         config.swipeSpeed = 0.1f;
+        config.doubleTapCheckTime = 250;
+        config.swippingLimitTime = 500;
+        config.longTappingTime = 500;
+        config.moveToSwipeCheckTime = 250;
+        config.postponement = 20f;
+        config.postponementRotation = 1d;
+        config.postponementPinchInOut = 1d;
 
         // Displayのインスタンス取得
         Display disp = getWindowManager().getDefaultDisplay();
