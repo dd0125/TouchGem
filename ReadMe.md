@@ -5,6 +5,7 @@ Android用タッチ検出ライブラリです。
 Examples
 ---------------------------------
 
+SingleTouch設定
 ```java:SingleTouch
 // class Instance
 private TouchGem touchGem;
@@ -84,6 +85,7 @@ config.setListener(listener);
 touchGem = new TouchGem(config);
 ```
 
+【必須】使えるようにする設定
 ```java:使えるようにする設定
 view.setOnTouchListener(new OnTouchListener() {
 
@@ -129,6 +131,7 @@ view.setOnTouchListener(new OnTouchListener() {
 });
 ```
 
+【オプション】2点タッチの検出
 ```java:DoubleTouch
 config.postponementRotation = 1d;
 config.postponementPinchInOut = 1d;
@@ -149,6 +152,7 @@ config.setDoubleTouchListener(new DoubleTouchGemListener() {
 });
 ```
 
+【オプション】部分タッチの検出
 ```java:PartialTouch
 // 部分的なListener設定
 TouchGemListener partialListener = new TouchGemListener() {
